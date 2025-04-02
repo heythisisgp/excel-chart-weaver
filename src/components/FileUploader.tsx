@@ -15,7 +15,6 @@ const FileUploader = ({ onDataExtracted, onClearData }: FileUploaderProps) => {
   const [isLoading, setIsLoading] = useState(false);
 
   const processExcelFile = async (file: File) => {
-    setIsLoading(true);
     try {
       const data = await file.arrayBuffer();
       const workbook = read(data);
@@ -63,34 +62,62 @@ const FileUploader = ({ onDataExtracted, onClearData }: FileUploaderProps) => {
       }
       
       if (worksheetsData.length === 0) {
-        toast.error("No valid data found in the Excel file");
-        return;
+        toast.error(`No valid data found in the file: ${file.name}`);
+        return null;
       }
       
-      onDataExtracted(worksheetsData, file.name);
+      return worksheetsData;
     } catch (error) {
-      console.error("Error processing Excel file:", error);
-      toast.error("Error processing Excel file. Please try again.");
-    } finally {
-      setIsLoading(false);
+      console.error(`Error processing file ${file.name}:`, error);
+      toast.error(`Error processing file ${file.name}. Please try again.`);
+      return null;
     }
   };
 
-  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = event.target.files;
     if (!files || files.length === 0) return;
     
-    const file = files[0];
-    const fileExtension = file.name.split('.').pop()?.toLowerCase();
+    setIsLoading(true);
     
-    if (fileExtension !== 'xlsx' && fileExtension !== 'xls' && fileExtension !== 'csv') {
-      toast.error("Please upload a valid Excel file (.xlsx, .xls) or CSV file");
-      return;
+    try {
+      // Convert FileList to array for easier processing
+      const fileArray = Array.from(files);
+      
+      if (fileArray.length > 2) {
+        toast.error("Please select a maximum of 2 files");
+        setIsLoading(false);
+        return;
+      }
+      
+      // Validate file types
+      for (const file of fileArray) {
+        const fileExtension = file.name.split('.').pop()?.toLowerCase();
+        
+        if (fileExtension !== 'xlsx' && fileExtension !== 'xls' && fileExtension !== 'csv') {
+          toast.error(`Invalid file type: ${file.name}. Please upload Excel or CSV files only`);
+          setIsLoading(false);
+          return;
+        }
+      }
+      
+      // Process files sequentially
+      for (const file of fileArray) {
+        const worksheetsData = await processExcelFile(file);
+        
+        if (worksheetsData) {
+          onDataExtracted(worksheetsData, file.name);
+          toast.success(`Successfully loaded ${file.name}`);
+        }
+      }
+    } catch (error) {
+      console.error("Error processing files:", error);
+      toast.error("Error processing files. Please try again.");
+    } finally {
+      setIsLoading(false);
+      // Reset the input to allow uploading the same files again
+      event.target.value = '';
     }
-    
-    processExcelFile(file);
-    // Reset the input to allow uploading the same file again
-    event.target.value = '';
   };
 
   return (
@@ -98,7 +125,7 @@ const FileUploader = ({ onDataExtracted, onClearData }: FileUploaderProps) => {
       <div className="text-center border-2 border-dashed border-gray-300 rounded-lg p-8 transition-all hover:border-blue-500">
         <Upload className="mx-auto h-12 w-12 text-gray-400" />
         <h3 className="mt-2 text-lg font-medium text-gray-900">Upload Excel Files</h3>
-        <p className="mt-1 text-sm text-gray-500">Upload your .xlsx, .xls, or .csv files</p>
+        <p className="mt-1 text-sm text-gray-500">Upload up to 2 Excel or CSV files</p>
         
         <div className="mt-4">
           <input
@@ -109,12 +136,13 @@ const FileUploader = ({ onDataExtracted, onClearData }: FileUploaderProps) => {
             onChange={handleFileChange}
             accept=".xlsx,.xls,.csv"
             disabled={isLoading}
+            multiple
           />
           <label
             htmlFor="file-upload"
             className="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 cursor-pointer"
           >
-            {isLoading ? "Processing..." : "Select File"}
+            {isLoading ? "Processing..." : "Select Files"}
           </label>
         </div>
       </div>
