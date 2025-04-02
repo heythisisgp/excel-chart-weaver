@@ -6,6 +6,7 @@ import FileUploader from "@/components/FileUploader";
 import ExcelTable from "@/components/ExcelTable";
 import ChartViewer from "@/components/ChartViewer";
 import DashboardStats from "@/components/DashboardStats";
+import MonthlyReport from "@/components/MonthlyReport";
 import { WorksheetData } from "@/types/excel";
 import { toast } from "sonner";
 
@@ -69,6 +70,10 @@ const Index = () => {
         {excelData.length > 0 && (
           <>
             <DashboardStats excelData={excelData} fileNames={getUniqueFileNames()} />
+
+            <div className="mt-8 mb-8">
+              <MonthlyReport excelData={excelData} />
+            </div>
 
             <div className="mt-8">
               <Tabs defaultValue="charts" className="w-full">
