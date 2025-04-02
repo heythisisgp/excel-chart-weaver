@@ -1,3 +1,4 @@
+
 import type { Config } from "tailwindcss";
 
 export default {
@@ -61,7 +62,20 @@ export default {
 					'accent-foreground': 'hsl(var(--sidebar-accent-foreground))',
 					border: 'hsl(var(--sidebar-border))',
 					ring: 'hsl(var(--sidebar-ring))'
-				}
+				},
+                // Excel Chart Weaver custom colors
+                excel: {
+                    blue: '#1F77B4',
+                    orange: '#FF7F0E',
+                    green: '#2CA02C',
+                    red: '#D62728',
+                    purple: '#9467BD',
+                    brown: '#8C564B',
+                    pink: '#E377C2',
+                    gray: '#7F7F7F',
+                    olive: '#BCBD22',
+                    cyan: '#17BECF'
+                }
 			},
 			borderRadius: {
 				lg: 'var(--radius)',
@@ -84,11 +98,21 @@ export default {
 					to: {
 						height: '0'
 					}
-				}
+				},
+                'fade-in': {
+                    '0%': { opacity: '0' },
+                    '100%': { opacity: '1' }
+                },
+                'slide-up': {
+                    '0%': { transform: 'translateY(10px)', opacity: '0' },
+                    '100%': { transform: 'translateY(0)', opacity: '1' }
+                }
 			},
 			animation: {
 				'accordion-down': 'accordion-down 0.2s ease-out',
-				'accordion-up': 'accordion-up 0.2s ease-out'
+				'accordion-up': 'accordion-up 0.2s ease-out',
+                'fade-in': 'fade-in 0.5s ease-out',
+                'slide-up': 'slide-up 0.5s ease-out'
 			}
 		}
 	},
