@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { read, utils } from "xlsx";
 import { Button } from "@/components/ui/button";
@@ -27,7 +28,7 @@ const FileUploader = ({ onDataExtracted, onClearData }: FileUploaderProps) => {
         const jsonData = utils.sheet_to_json(worksheet);
         
         // Convert to array of arrays for raw data
-        const rawData = utils.sheet_to_json(worksheet, { header: 1 });
+        const rawData = utils.sheet_to_json(worksheet, { header: 1 }) as any[][];
         
         if (jsonData.length === 0) {
           continue; // Skip empty worksheets
