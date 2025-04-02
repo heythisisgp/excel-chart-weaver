@@ -7,6 +7,8 @@ import ExcelTable from "@/components/ExcelTable";
 import ChartViewer from "@/components/ChartViewer";
 import DashboardStats from "@/components/DashboardStats";
 import MonthlyReport from "@/components/MonthlyReport";
+import ProjectReport from "@/components/ProjectReport";
+import PurchaseOrdersReport from "@/components/PurchaseOrdersReport";
 import { WorksheetData } from "@/types/excel";
 import { toast } from "sonner";
 
@@ -72,7 +74,25 @@ const Index = () => {
             <DashboardStats excelData={excelData} fileNames={getUniqueFileNames()} />
 
             <div className="mt-8 mb-8">
-              <MonthlyReport excelData={excelData} />
+              <Tabs defaultValue="monthly" className="w-full">
+                <TabsList className="mb-6">
+                  <TabsTrigger value="monthly">Monthly Report</TabsTrigger>
+                  <TabsTrigger value="project">Project Report</TabsTrigger>
+                  <TabsTrigger value="po">Purchase Orders</TabsTrigger>
+                </TabsList>
+
+                <TabsContent value="monthly">
+                  <MonthlyReport excelData={excelData} />
+                </TabsContent>
+                
+                <TabsContent value="project">
+                  <ProjectReport excelData={excelData} />
+                </TabsContent>
+                
+                <TabsContent value="po">
+                  <PurchaseOrdersReport excelData={excelData} />
+                </TabsContent>
+              </Tabs>
             </div>
 
             <div className="mt-8">

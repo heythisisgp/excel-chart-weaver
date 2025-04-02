@@ -45,7 +45,7 @@ const MonthlyReportTable = ({ data, valueColumnName }: MonthlyReportTableProps) 
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead className="w-[180px]">Month</TableHead>
+                <TableHead className="w-[180px]">{data[0]?.date instanceof Date ? "Month" : "Item"}</TableHead>
                 <TableHead>{valueColumnName}</TableHead>
                 <TableHead className="text-right">% of Total</TableHead>
               </TableRow>
