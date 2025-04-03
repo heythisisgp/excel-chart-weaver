@@ -1,3 +1,4 @@
+
 import { useState, useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -212,106 +213,106 @@ const MonthlyReport = ({ excelData, combineData = true }: MonthlyReportProps) =>
                     >
                       {sheet.fileName} - {sheet.name}
                     </SelectItem>
-                  )) : (
-                    <SelectItem value="none" disabled>No eligible worksheets found</SelectItem>
-                  )}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Date Column</label>
-              <Select 
-                value={dateColumn || ""} 
-                onValueChange={setDateColumn}
-                disabled={!selectedSheet}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select date column" />
-                </SelectTrigger>
-                <SelectContent>
-                  {columns.dateColumns.length ? (
-                    columns.dateColumns.map(column => (
-                      <SelectItem key={column} value={column}>
-                        {column}
-                      </SelectItem>
-                    ))
-                  ) : (
-                    <SelectItem value="none" disabled>No date columns found</SelectItem>
-                  )}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Value Column</label>
-              <Select 
-                value={valueColumn || ""} 
-                onValueChange={setValueColumn}
-                disabled={!selectedSheet}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select value column" />
-                </SelectTrigger>
-                <SelectContent>
-                  {columns.valueColumns.length ? (
-                    columns.valueColumns.map(column => (
-                      <SelectItem key={column} value={column}>
-                        {column}
-                      </SelectItem>
-                    ))
-                  ) : (
-                    <SelectItem value="none" disabled>No numeric columns found</SelectItem>
-                  )}
-                </SelectContent>
-              </Select>
-            </div>
+                  ))
+                ) : (
+                  <SelectItem value="none" disabled>No eligible worksheets found</SelectItem>
+                )}
+              </SelectContent>
+            </Select>
           </div>
 
-          <Button 
-            onClick={handleGenerateReport}
-            disabled={!canViewReport} 
-            className="w-full md:w-auto mb-6"
-          >
-            <DollarSign className="mr-2 h-4 w-4" />
-            Generate Monthly Report
-          </Button>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Date Column</label>
+            <Select 
+              value={dateColumn || ""} 
+              onValueChange={setDateColumn}
+              disabled={!selectedSheet}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Select date column" />
+              </SelectTrigger>
+              <SelectContent>
+                {columns.dateColumns.length ? (
+                  columns.dateColumns.map(column => (
+                    <SelectItem key={column} value={column}>
+                      {column}
+                    </SelectItem>
+                  ))
+                ) : (
+                  <SelectItem value="none" disabled>No date columns found</SelectItem>
+                )}
+              </SelectContent>
+            </Select>
+          </div>
 
-          {/* Report Visualizations */}
-          {canViewReport && monthlyData.length > 0 && (
-            <Tabs defaultValue="chart" className="w-full">
-              <TabsList className="mb-6">
-                <TabsTrigger value="chart">Chart</TabsTrigger>
-                <TabsTrigger value="table">Table</TabsTrigger>
-              </TabsList>
-
-              <TabsContent value="chart" className="mt-2">
-                <MonthlyReportChart 
-                  data={monthlyData} 
-                  valueColumnName={valueColumn || ""} 
-                />
-              </TabsContent>
-              
-              <TabsContent value="table" className="mt-2">
-                <MonthlyReportTable 
-                  data={monthlyData} 
-                  valueColumnName={valueColumn || ""} 
-                  showSource={combineData && excelData.length > 1}
-                />
-              </TabsContent>
-            </Tabs>
-          )}
-
-          {/* No Data Message */}
-          {canViewReport && monthlyData.length === 0 && (
-            <div className="text-center p-8 bg-gray-50 rounded-md border border-gray-200">
-              <p className="text-gray-500">
-                No monthly data could be generated with the selected columns. 
-                Try selecting different date or value columns.
-              </p>
-            </div>
-          )}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Value Column</label>
+            <Select 
+              value={valueColumn || ""} 
+              onValueChange={setValueColumn}
+              disabled={!selectedSheet}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Select value column" />
+              </SelectTrigger>
+              <SelectContent>
+                {columns.valueColumns.length ? (
+                  columns.valueColumns.map(column => (
+                    <SelectItem key={column} value={column}>
+                      {column}
+                    </SelectItem>
+                  ))
+                ) : (
+                  <SelectItem value="none" disabled>No numeric columns found</SelectItem>
+                )}
+              </SelectContent>
+            </Select>
+          </div>
         </div>
+
+        <Button 
+          onClick={handleGenerateReport}
+          disabled={!canViewReport} 
+          className="w-full md:w-auto mb-6"
+        >
+          <DollarSign className="mr-2 h-4 w-4" />
+          Generate Monthly Report
+        </Button>
+
+        {/* Report Visualizations */}
+        {canViewReport && monthlyData.length > 0 && (
+          <Tabs defaultValue="chart" className="w-full">
+            <TabsList className="mb-6">
+              <TabsTrigger value="chart">Chart</TabsTrigger>
+              <TabsTrigger value="table">Table</TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="chart" className="mt-2">
+              <MonthlyReportChart 
+                data={monthlyData} 
+                valueColumnName={valueColumn || ""} 
+              />
+            </TabsContent>
+            
+            <TabsContent value="table" className="mt-2">
+              <MonthlyReportTable 
+                data={monthlyData} 
+                valueColumnName={valueColumn || ""} 
+                showSource={combineData && excelData.length > 1}
+              />
+            </TabsContent>
+          </Tabs>
+        )}
+
+        {/* No Data Message */}
+        {canViewReport && monthlyData.length === 0 && (
+          <div className="text-center p-8 bg-gray-50 rounded-md border border-gray-200">
+            <p className="text-gray-500">
+              No monthly data could be generated with the selected columns. 
+              Try selecting different date or value columns.
+            </p>
+          </div>
+        )}
       </CardContent>
     </Card>
   );
