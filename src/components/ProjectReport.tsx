@@ -8,7 +8,7 @@ import MonthlyReportChart from "./MonthlyReportChart";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import { Button } from "./ui/button";
-import { ClipboardList, BarChart } from "lucide-react";
+import { ClipboardList, BarChart, CalendarRange } from "lucide-react";
 
 interface ProjectReportProps {
   excelData: WorksheetData[];
@@ -20,6 +20,7 @@ const ProjectReport = ({ excelData }: ProjectReportProps) => {
   const [dateColumn, setDateColumn] = useState<string | null>(null);
   const [valueColumn, setValueColumn] = useState<string | null>(null);
   const [selectedProject, setSelectedProject] = useState<string | null>(null);
+  const [selectedMonth, setSelectedMonth] = useState<string | null>(null);
 
   // Find sheets with project, date and numeric columns
   const eligibleSheets = useMemo(() => {
@@ -113,6 +114,48 @@ const ProjectReport = ({ excelData }: ProjectReportProps) => {
     return Array.from(values).sort();
   }, [selectedSheetData, projectColumn]);
 
+  // Get unique month values from the data
+  const availableMonths = useMemo(() => {
+    if (!selectedSheetData || !dateColumn) return [];
+    
+    const months = new Set<string>();
+    
+    selectedSheetData.data.forEach(row => {
+      try {
+        let dateValue = row[dateColumn]?.value;
+        if (!dateValue) return;
+        
+        // Convert string to Date if needed
+        let date: Date;
+        if (typeof dateValue === 'string') {
+          date = new Date(dateValue);
+          if (isNaN(date.getTime())) return; // Skip invalid dates
+        } else if (dateValue instanceof Date) {
+          date = dateValue;
+        } else {
+          return; // Skip non-date values
+        }
+        
+        // Format as "MM/YYYY"
+        const monthYear = `${String(date.getMonth() + 1).padStart(2, '0')}/${date.getFullYear()}`;
+        months.add(monthYear);
+      } catch (error) {
+        console.error("Error processing date:", error);
+      }
+    });
+    
+    // Sort months chronologically
+    return Array.from(months).sort((a, b) => {
+      const [aMonth, aYear] = a.split('/');
+      const [bMonth, bYear] = b.split('/');
+      
+      const aDate = new Date(parseInt(aYear), parseInt(aMonth) - 1, 1);
+      const bDate = new Date(parseInt(bYear), parseInt(bMonth) - 1, 1);
+      
+      return aDate.getTime() - bDate.getTime();
+    });
+  }, [selectedSheetData, dateColumn]);
+
   // Handle sheet selection
   const handleSheetChange = (sheetId: string) => {
     setSelectedSheet(sheetId);
@@ -120,6 +163,7 @@ const ProjectReport = ({ excelData }: ProjectReportProps) => {
     setDateColumn(null);
     setValueColumn(null);
     setSelectedProject(null);
+    setSelectedMonth(null);
     
     // Auto-select columns
     const sheet = excelData.find(s => `${s.fileName}-${s.name}` === sheetId);
@@ -143,12 +187,17 @@ const ProjectReport = ({ excelData }: ProjectReportProps) => {
   // Check if we can view report
   const canViewReport = selectedSheet && projectColumn && dateColumn && valueColumn && selectedProject;
 
-  // Generate monthly data for the selected project
-  const projectMonthlyData = useMemo(() => {
+  // Generate project data filtered by month if selected
+  const projectData = useMemo(() => {
     if (!canViewReport || !selectedSheetData) return [];
     
-    // Map to store aggregated monthly data
-    const monthlyMap = new Map<string, number>();
+    // Store data points for the selected project
+    const dataPoints: Array<{
+      date: Date;
+      value: number;
+      month: string;
+      monthKey: string;
+    }> = [];
     
     // Process each row in the sheet
     selectedSheetData.data.forEach(row => {
@@ -172,46 +221,85 @@ const ProjectReport = ({ excelData }: ProjectReportProps) => {
           return; // Skip non-date values
         }
         
-        // Get the month-year key
-        const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+        // Get the month-year for filtering
+        const monthYear = `${String(date.getMonth() + 1).padStart(2, '0')}/${date.getFullYear()}`;
+        
+        // Filter by month if one is selected
+        if (selectedMonth && monthYear !== selectedMonth) return;
         
         // Get the numeric value
         const value = row[valueColumn]?.value;
         if (typeof value !== 'number') return;
         
-        // Add to monthly total
-        if (monthlyMap.has(monthKey)) {
-          monthlyMap.set(monthKey, monthlyMap.get(monthKey)! + value);
-        } else {
-          monthlyMap.set(monthKey, value);
-        }
+        // Add to data points
+        const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+        dataPoints.push({
+          date,
+          value,
+          month: monthYear,
+          monthKey
+        });
       } catch (error) {
         console.error("Error processing row for project report:", error);
       }
     });
     
-    // Convert map to array of objects and sort by date
-    return Array.from(monthlyMap.entries())
-      .map(([monthKey, total]) => {
-        const [year, month] = monthKey.split('-');
-        return {
-          monthKey,
-          month: `${month}/${year}`,
-          total,
-          date: new Date(parseInt(year), parseInt(month) - 1, 1)
-        };
-      })
-      .sort((a, b) => a.date.getTime() - b.date.getTime());
+    // If we're not filtering by month, aggregate by month
+    if (!selectedMonth) {
+      // Map to store aggregated monthly data
+      const monthlyMap = new Map<string, number>();
+      
+      // Aggregate values by month
+      dataPoints.forEach(point => {
+        if (monthlyMap.has(point.monthKey)) {
+          monthlyMap.set(point.monthKey, monthlyMap.get(point.monthKey)! + point.value);
+        } else {
+          monthlyMap.set(point.monthKey, point.value);
+        }
+      });
+      
+      // Convert map to array of objects and sort by date
+      return Array.from(monthlyMap.entries())
+        .map(([monthKey, total]) => {
+          const [year, month] = monthKey.split('-');
+          return {
+            monthKey,
+            month: `${month}/${year}`,
+            total,
+            date: new Date(parseInt(year), parseInt(month) - 1, 1)
+          };
+        })
+        .sort((a, b) => a.date.getTime() - b.date.getTime());
+    } else {
+      // When filtering by month, return individual data points
+      return dataPoints.map(point => ({
+        monthKey: point.monthKey,
+        month: point.month,
+        total: point.value,
+        date: point.date
+      })).sort((a, b) => a.date.getTime() - b.date.getTime());
+    }
     
-  }, [selectedSheetData, projectColumn, dateColumn, valueColumn, selectedProject, canViewReport]);
+  }, [selectedSheetData, projectColumn, dateColumn, valueColumn, selectedProject, selectedMonth, canViewReport]);
 
   const handleGenerateReport = () => {
-    if (projectMonthlyData.length === 0) {
-      toast.warning("No valid monthly data found for this project. Try selecting different columns or project.");
+    if (projectData.length === 0) {
+      toast.warning(selectedMonth 
+        ? `No data found for project "${selectedProject}" in month ${selectedMonth}` 
+        : "No data found for this project. Try selecting different columns or project."
+      );
     } else {
-      toast.success(`Generated project report with ${projectMonthlyData.length} months of data`);
+      toast.success(`Generated project report with ${projectData.length} ${selectedMonth ? "entries" : "months"} of data`);
     }
   };
+
+  // Generate a title based on selections
+  const reportTitle = useMemo(() => {
+    if (!selectedProject) return "Project Report";
+    return selectedMonth 
+      ? `${selectedProject} - ${selectedMonth}` 
+      : `${selectedProject} - All Months`;
+  }, [selectedProject, selectedMonth]);
 
   return (
     <Card className="w-full">
@@ -276,7 +364,7 @@ const ProjectReport = ({ excelData }: ProjectReportProps) => {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Date Column</label>
               <Select 
@@ -348,6 +436,27 @@ const ProjectReport = ({ excelData }: ProjectReportProps) => {
                 </SelectContent>
               </Select>
             </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Allocation Month (Optional)</label>
+              <Select 
+                value={selectedMonth || ""} 
+                onValueChange={(value) => setSelectedMonth(value || null)}
+                disabled={!dateColumn || availableMonths.length === 0}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="All months" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">All Months</SelectItem>
+                  {availableMonths.map(month => (
+                    <SelectItem key={month} value={month}>
+                      {month}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
           </div>
 
           <Button 
@@ -360,35 +469,47 @@ const ProjectReport = ({ excelData }: ProjectReportProps) => {
           </Button>
 
           {/* Report Visualizations */}
-          {canViewReport && projectMonthlyData.length > 0 && (
-            <Tabs defaultValue="chart" className="w-full">
-              <TabsList className="mb-6">
-                <TabsTrigger value="chart">Chart</TabsTrigger>
-                <TabsTrigger value="table">Table</TabsTrigger>
-              </TabsList>
-
-              <TabsContent value="chart" className="mt-2">
-                <MonthlyReportChart 
-                  data={projectMonthlyData} 
-                  valueColumnName={`${selectedProject} (${valueColumn})`} 
-                />
-              </TabsContent>
+          {canViewReport && projectData.length > 0 && (
+            <>
+              <div className="mb-4">
+                <h3 className="text-lg font-medium flex items-center gap-2">
+                  <CalendarRange className="h-4 w-4" />
+                  {reportTitle}
+                </h3>
+              </div>
               
-              <TabsContent value="table" className="mt-2">
-                <MonthlyReportTable 
-                  data={projectMonthlyData} 
-                  valueColumnName={`${selectedProject} (${valueColumn})`} 
-                />
-              </TabsContent>
-            </Tabs>
+              <Tabs defaultValue="chart" className="w-full">
+                <TabsList className="mb-6">
+                  <TabsTrigger value="chart">Chart</TabsTrigger>
+                  <TabsTrigger value="table">Table</TabsTrigger>
+                </TabsList>
+
+                <TabsContent value="chart" className="mt-2">
+                  <MonthlyReportChart 
+                    data={projectData} 
+                    valueColumnName={`${selectedProject} (${valueColumn})`} 
+                  />
+                </TabsContent>
+                
+                <TabsContent value="table" className="mt-2">
+                  <MonthlyReportTable 
+                    data={projectData} 
+                    valueColumnName={`${selectedProject} (${valueColumn})`} 
+                  />
+                </TabsContent>
+              </Tabs>
+            </>
           )}
 
           {/* No Data Message */}
-          {canViewReport && projectMonthlyData.length === 0 && (
+          {canViewReport && projectData.length === 0 && (
             <div className="text-center p-8 bg-gray-50 rounded-md border border-gray-200">
               <p className="text-gray-500">
-                No monthly data found for project "{selectedProject}". 
-                Try selecting a different project or check your data.
+                {selectedMonth 
+                  ? `No data found for project "${selectedProject}" in month ${selectedMonth}.` 
+                  : `No data found for project "${selectedProject}".`}
+                <br />
+                Try selecting a different project or month.
               </p>
             </div>
           )}

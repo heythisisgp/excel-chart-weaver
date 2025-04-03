@@ -38,6 +38,23 @@ const MonthlyReportTable = ({ data, valueColumnName }: MonthlyReportTableProps) 
     }).format(value);
   };
 
+  // Check if we're showing daily entries or monthly summaries
+  const isDetailView = data.length > 0 && 
+    data.some(item => {
+      // If multiple entries have the same month, we're in a detail view
+      const month = item.month;
+      return data.filter(d => d.month === month).length > 1;
+    });
+
+  // Format date for detail view
+  const formatDate = (date: Date) => {
+    return new Intl.DateTimeFormat('en-US', {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit'
+    }).format(date);
+  };
+
   return (
     <div className="space-y-4">
       <Card className="overflow-hidden">
@@ -45,18 +62,22 @@ const MonthlyReportTable = ({ data, valueColumnName }: MonthlyReportTableProps) 
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead className="w-[180px]">{data[0]?.date instanceof Date ? "Month" : "Item"}</TableHead>
+                <TableHead className="w-[180px]">
+                  {isDetailView ? "Date" : "Month"}
+                </TableHead>
                 <TableHead>{valueColumnName}</TableHead>
                 <TableHead className="text-right">% of Total</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {data.map((item) => {
+              {data.map((item, index) => {
                 const percentOfTotal = (item.total / totalSum) * 100;
                 
                 return (
-                  <TableRow key={item.monthKey}>
-                    <TableCell className="font-medium">{item.month}</TableCell>
+                  <TableRow key={`${item.monthKey}-${index}`}>
+                    <TableCell className="font-medium">
+                      {isDetailView ? formatDate(item.date) : item.month}
+                    </TableCell>
                     <TableCell>{formatCurrency(item.total)}</TableCell>
                     <TableCell className="text-right">
                       {percentOfTotal.toFixed(1)}%
