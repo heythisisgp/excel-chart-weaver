@@ -57,7 +57,8 @@ const FileUploader = ({ onDataExtracted, onClearData }: FileUploaderProps) => {
           fileName: file.name,
           headers,
           data: processedData,
-          rawData
+          rawData,
+          source: file.name // Add source file name
         });
       }
       
@@ -125,7 +126,7 @@ const FileUploader = ({ onDataExtracted, onClearData }: FileUploaderProps) => {
       <div className="text-center border-2 border-dashed border-gray-300 rounded-lg p-8 transition-all hover:border-blue-500">
         <Upload className="mx-auto h-12 w-12 text-gray-400" />
         <h3 className="mt-2 text-lg font-medium text-gray-900">Upload Excel Files</h3>
-        <p className="mt-1 text-sm text-gray-500">Upload up to 2 Excel or CSV files</p>
+        <p className="mt-1 text-sm text-gray-500">Upload up to 2 Excel or CSV files for combined analysis</p>
         
         <div className="mt-4">
           <input

@@ -10,6 +10,7 @@ export interface WorksheetData {
   headers: string[];
   data: Record<string, CellValue>[];
   rawData: any[][];
+  source?: string; // Track which file this worksheet came from
 }
 
 export type ChartType = 'bar' | 'line' | 'pie' | 'area' | 'scatter';

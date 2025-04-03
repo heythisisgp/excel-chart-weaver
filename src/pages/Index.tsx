@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import FileUploader from "@/components/FileUploader";
@@ -11,11 +11,14 @@ import ProjectReport from "@/components/ProjectReport";
 import PurchaseOrdersReport from "@/components/PurchaseOrdersReport";
 import { WorksheetData } from "@/types/excel";
 import { toast } from "sonner";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
 
 const Index = () => {
   const [excelData, setExcelData] = useState<WorksheetData[]>([]);
   const [activeFile, setActiveFile] = useState<string | null>(null);
   const [fileNames, setFileNames] = useState<string[]>([]);
+  const [combineData, setCombineData] = useState<boolean>(true);
 
   const handleExcelData = (data: WorksheetData[], fileName: string) => {
     // Check if file is already loaded
@@ -44,11 +47,21 @@ const Index = () => {
     return [...new Set(excelData.map(sheet => sheet.fileName))];
   };
 
+  // Get files count for UI display
+  const filesCount = useMemo(() => {
+    return getUniqueFileNames().length;
+  }, [fileNames]);
+
   const handleClearData = () => {
     setExcelData([]);
     setActiveFile(null);
     setFileNames([]);
     toast.info("All data has been cleared");
+  };
+
+  const toggleCombineData = () => {
+    setCombineData(!combineData);
+    toast.info(combineData ? "Combined data analysis disabled" : "Combined data analysis enabled");
   };
 
   return (
@@ -71,6 +84,23 @@ const Index = () => {
 
         {excelData.length > 0 && (
           <>
+            <div className="flex items-center justify-between mb-6">
+              <div className="text-lg font-medium">
+                {filesCount > 1 ? `${filesCount} Files Loaded` : "1 File Loaded"}
+              </div>
+              
+              {filesCount > 1 && (
+                <div className="flex items-center space-x-2">
+                  <Switch 
+                    id="combine-data" 
+                    checked={combineData} 
+                    onCheckedChange={toggleCombineData} 
+                  />
+                  <Label htmlFor="combine-data">Combine Data from All Files</Label>
+                </div>
+              )}
+            </div>
+
             <DashboardStats excelData={excelData} fileNames={getUniqueFileNames()} />
 
             <div className="mt-8 mb-8">
@@ -82,15 +112,15 @@ const Index = () => {
                 </TabsList>
 
                 <TabsContent value="monthly">
-                  <MonthlyReport excelData={excelData} />
+                  <MonthlyReport excelData={excelData} combineData={combineData} />
                 </TabsContent>
                 
                 <TabsContent value="project">
-                  <ProjectReport excelData={excelData} />
+                  <ProjectReport excelData={excelData} combineData={combineData} />
                 </TabsContent>
                 
                 <TabsContent value="po">
-                  <PurchaseOrdersReport excelData={excelData} />
+                  <PurchaseOrdersReport excelData={excelData} combineData={combineData} />
                 </TabsContent>
               </Tabs>
             </div>

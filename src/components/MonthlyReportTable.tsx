@@ -14,14 +14,16 @@ interface MonthlyDataPoint {
   month: string;
   total: number;
   date: Date;
+  source?: string; // Add source to track which file data came from
 }
 
 interface MonthlyReportTableProps {
   data: MonthlyDataPoint[];
   valueColumnName: string;
+  showSource?: boolean; // Option to show data source in table
 }
 
-const MonthlyReportTable = ({ data, valueColumnName }: MonthlyReportTableProps) => {
+const MonthlyReportTable = ({ data, valueColumnName, showSource = false }: MonthlyReportTableProps) => {
   // Calculate totals and statistics
   const totalSum = data.reduce((sum, item) => sum + item.total, 0);
   const average = totalSum / data.length;
@@ -65,6 +67,7 @@ const MonthlyReportTable = ({ data, valueColumnName }: MonthlyReportTableProps) 
                 <TableHead className="w-[180px]">
                   {isDetailView ? "Date" : "Month"}
                 </TableHead>
+                {showSource && <TableHead>Source</TableHead>}
                 <TableHead>{valueColumnName}</TableHead>
                 <TableHead className="text-right">% of Total</TableHead>
               </TableRow>
@@ -78,6 +81,11 @@ const MonthlyReportTable = ({ data, valueColumnName }: MonthlyReportTableProps) 
                     <TableCell className="font-medium">
                       {isDetailView ? formatDate(item.date) : item.month}
                     </TableCell>
+                    {showSource && (
+                      <TableCell className="text-sm text-gray-600">
+                        {item.source || "Unknown"}
+                      </TableCell>
+                    )}
                     <TableCell>{formatCurrency(item.total)}</TableCell>
                     <TableCell className="text-right">
                       {percentOfTotal.toFixed(1)}%
