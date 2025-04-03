@@ -1,4 +1,3 @@
-
 import { useState, useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -12,9 +11,10 @@ import { ShoppingCart, TrendingUp } from "lucide-react";
 
 interface PurchaseOrdersReportProps {
   excelData: WorksheetData[];
+  combineData?: boolean;
 }
 
-const PurchaseOrdersReport = ({ excelData }: PurchaseOrdersReportProps) => {
+const PurchaseOrdersReport = ({ excelData, combineData = true }: PurchaseOrdersReportProps) => {
   const [selectedSheet, setSelectedSheet] = useState<string | null>(null);
   const [poColumn, setPoColumn] = useState<string | null>(null);
   const [dateColumn, setDateColumn] = useState<string | null>(null);
@@ -226,7 +226,8 @@ const PurchaseOrdersReport = ({ excelData }: PurchaseOrdersReportProps) => {
         monthKey: String(index), // Using index as key 
         month: poId, // Using PO ID as "month" label
         total,
-        date: new Date() // Dummy date since we're using components that expect date
+        date: new Date(), // Dummy date since we're using components that expect date
+        source: selectedSheetData.fileName // Include source for combined data views
       }))
       .sort((a, b) => b.total - a.total); // Sort by value descending
   }, [selectedSheetData, poColumn, dateColumn, valueColumn, selectedMonth, canViewReport]);
@@ -244,7 +245,7 @@ const PurchaseOrdersReport = ({ excelData }: PurchaseOrdersReportProps) => {
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <ShoppingCart className="h-5 w-5" />
-          <span>Purchase Orders Report</span>
+          <span>Purchase Orders Report {combineData ? "(Combined Data)" : ""}</span>
         </CardTitle>
       </CardHeader>
       <CardContent>
@@ -403,7 +404,8 @@ const PurchaseOrdersReport = ({ excelData }: PurchaseOrdersReportProps) => {
               <TabsContent value="table" className="mt-2">
                 <MonthlyReportTable 
                   data={poData} 
-                  valueColumnName={`Purchase Orders (${valueColumn})`} 
+                  valueColumnName={`Purchase Orders (${valueColumn})`}
+                  showSource={combineData && excelData.length > 1}
                 />
               </TabsContent>
             </Tabs>

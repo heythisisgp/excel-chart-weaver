@@ -1,4 +1,3 @@
-
 import { useState, useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -12,9 +11,10 @@ import { ClipboardList, BarChart, CalendarRange } from "lucide-react";
 
 interface ProjectReportProps {
   excelData: WorksheetData[];
+  combineData?: boolean;
 }
 
-const ProjectReport = ({ excelData }: ProjectReportProps) => {
+const ProjectReport = ({ excelData, combineData = true }: ProjectReportProps) => {
   const [selectedSheet, setSelectedSheet] = useState<string | null>(null);
   const [projectColumn, setProjectColumn] = useState<string | null>(null);
   const [dateColumn, setDateColumn] = useState<string | null>(null);
@@ -197,6 +197,7 @@ const ProjectReport = ({ excelData }: ProjectReportProps) => {
       value: number;
       month: string;
       monthKey: string;
+      source?: string;
     }> = [];
     
     // Process each row in the sheet
@@ -231,13 +232,14 @@ const ProjectReport = ({ excelData }: ProjectReportProps) => {
         const value = row[valueColumn]?.value;
         if (typeof value !== 'number') return;
         
-        // Add to data points
+        // Add to data points with source
         const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
         dataPoints.push({
           date,
           value,
           month: monthYear,
-          monthKey
+          monthKey,
+          source: selectedSheetData.fileName
         });
       } catch (error) {
         console.error("Error processing row for project report:", error);
@@ -266,7 +268,8 @@ const ProjectReport = ({ excelData }: ProjectReportProps) => {
             monthKey,
             month: `${month}/${year}`,
             total,
-            date: new Date(parseInt(year), parseInt(month) - 1, 1)
+            date: new Date(parseInt(year), parseInt(month) - 1, 1),
+            source: selectedSheetData.fileName
           };
         })
         .sort((a, b) => a.date.getTime() - b.date.getTime());
@@ -276,7 +279,8 @@ const ProjectReport = ({ excelData }: ProjectReportProps) => {
         monthKey: point.monthKey,
         month: point.month,
         total: point.value,
-        date: point.date
+        date: point.date,
+        source: point.source
       })).sort((a, b) => a.date.getTime() - b.date.getTime());
     }
     
@@ -306,10 +310,11 @@ const ProjectReport = ({ excelData }: ProjectReportProps) => {
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <ClipboardList className="h-5 w-5" />
-          <span>Project Based Report</span>
+          <span>Project Based Report {combineData ? "(Combined Data)" : ""}</span>
         </CardTitle>
       </CardHeader>
       <CardContent>
+        {/* Selection Controls */}
         <div className="space-y-4">
           {/* Selection Controls */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
@@ -494,7 +499,8 @@ const ProjectReport = ({ excelData }: ProjectReportProps) => {
                 <TabsContent value="table" className="mt-2">
                   <MonthlyReportTable 
                     data={projectData} 
-                    valueColumnName={`${selectedProject} (${valueColumn})`} 
+                    valueColumnName={`${selectedProject} (${valueColumn})`}
+                    showSource={combineData && excelData.length > 1}
                   />
                 </TabsContent>
               </Tabs>

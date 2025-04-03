@@ -1,4 +1,3 @@
-
 import { useState, useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -12,13 +11,14 @@ import { CalendarIcon, DollarSign } from "lucide-react";
 
 interface MonthlyReportProps {
   excelData: WorksheetData[];
+  combineData?: boolean;
 }
 
 /**
  * This component handles the monthly financial reports visualization.
  * It allows users to select a financial dataset and view it in different formats.
  */
-const MonthlyReport = ({ excelData }: MonthlyReportProps) => {
+const MonthlyReport = ({ excelData, combineData = true }: MonthlyReportProps) => {
   const [selectedSheet, setSelectedSheet] = useState<string | null>(null);
   const [dateColumn, setDateColumn] = useState<string | null>(null);
   const [valueColumn, setValueColumn] = useState<string | null>(null);
@@ -138,6 +138,9 @@ const MonthlyReport = ({ excelData }: MonthlyReportProps) => {
           return; // Skip non-date values
         }
         
+        // Add source tracking if we're combining data
+        const source = selectedSheetData.fileName;
+        
         // Get the month-year key
         const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
         
@@ -164,7 +167,8 @@ const MonthlyReport = ({ excelData }: MonthlyReportProps) => {
           monthKey,
           month: `${month}/${year}`,
           total,
-          date: new Date(parseInt(year), parseInt(month) - 1, 1)
+          date: new Date(parseInt(year), parseInt(month) - 1, 1),
+          source: selectedSheetData.fileName // Include source for combined data views
         };
       })
       .sort((a, b) => a.date.getTime() - b.date.getTime());
@@ -184,33 +188,31 @@ const MonthlyReport = ({ excelData }: MonthlyReportProps) => {
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <CalendarIcon className="h-5 w-5" />
-          <span>Monthly Financial Report</span>
+          <span>Monthly Financial Report {combineData ? "(Combined Data)" : ""}</span>
         </CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="space-y-4">
-          {/* Selection Controls */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Select Worksheet</label>
-              <Select 
-                value={selectedSheet || ""} 
-                onValueChange={handleSheetChange}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Choose data source" />
-                </SelectTrigger>
-                <SelectContent>
-                  {eligibleSheets.length ? (
-                    eligibleSheets.map(sheet => (
-                      <SelectItem 
-                        key={`${sheet.fileName}-${sheet.name}`} 
-                        value={`${sheet.fileName}-${sheet.name}`}
-                      >
-                        {sheet.fileName} - {sheet.name}
-                      </SelectItem>
-                    ))
-                  ) : (
+        {/* Selection Controls */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Select Worksheet</label>
+            <Select 
+              value={selectedSheet || ""} 
+              onValueChange={handleSheetChange}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Choose data source" />
+              </SelectTrigger>
+              <SelectContent>
+                {eligibleSheets.length ? (
+                  eligibleSheets.map(sheet => (
+                    <SelectItem 
+                      key={`${sheet.fileName}-${sheet.name}`} 
+                      value={`${sheet.fileName}-${sheet.name}`}
+                    >
+                      {sheet.fileName} - {sheet.name}
+                    </SelectItem>
+                  )) : (
                     <SelectItem value="none" disabled>No eligible worksheets found</SelectItem>
                   )}
                 </SelectContent>
@@ -294,6 +296,7 @@ const MonthlyReport = ({ excelData }: MonthlyReportProps) => {
                 <MonthlyReportTable 
                   data={monthlyData} 
                   valueColumnName={valueColumn || ""} 
+                  showSource={combineData && excelData.length > 1}
                 />
               </TabsContent>
             </Tabs>
